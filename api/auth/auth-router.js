@@ -7,7 +7,7 @@ const {
 	checkUsernameFree,
 	checkPasswordLength,
 } = require('./auth-middleware');
-const Users = require('../users/users-model');
+const User = require('../users/users-model');
 
 /**
   1 [POST] /api/auth/register { "username": "sue", "password": "1234" }
@@ -36,16 +36,14 @@ router.post(
 	checkPasswordLength,
 	checkUsernameFree,
 	async (req, res, next) => {
-		try {
-			const { username, password } = req.body;
-			const hash = bcrypt.hashSync(password, 12);
-			const newUser = { username, password: hash };
-			const user = await Users.add(newUser);
-			res.status(201).json(user);
-			next();
-		} catch (error) {
-			next(error);
-		}
+		const { username, password } = req.body;
+		const hash = bcrypt.hashSync(password, 8);
+
+		User.add({ username, password: hash })
+			.then((saved) => {
+				res.status(201).json(saved);
+			})
+			.catch(next);
 	}
 );
 
@@ -68,7 +66,7 @@ router.post('/login', checkUsernameExists, (req, res, next) => {
 	const { password } = req.body;
 	if (bcrypt.compareSync(password, req.user.password)) {
 		req.session.user = req.user;
-		res.json({ message: `"Welcome ${req.user.username}!` });
+		res.json({ message: `Welcome ${req.user.username}` });
 	} else {
 		next({ status: 401, message: 'Invalid credentials' });
 	}
@@ -91,7 +89,7 @@ router.post('/login', checkUsernameExists, (req, res, next) => {
  */
 router.get('/logout', (req, res, next) => {
 	if (req.session.user) {
-		res.session.destroy((error) => {
+		req.session.destroy((error) => {
 			if (error) {
 				next(error);
 			} else {
