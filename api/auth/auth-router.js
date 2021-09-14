@@ -96,6 +96,7 @@ router.get('/logout', (req, res, next) => {
 				res.json({ message: 'logged out' });
 			}
 		});
+		//
 	} else {
 		res.json({ message: 'no session' });
 	}
